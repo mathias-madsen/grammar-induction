@@ -37,7 +37,7 @@ if __name__ == "__main__":
     alphabet_size = 2
 
     model = Grammar(nchars=alphabet_size, nrules=10)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
     
     model.zero_grad()
     
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     for stepidx in range(1000):
     
         print("Step %s . . ." % stepidx)
-        while total_sents < 300:
+        while total_sents < 128:
     
             indices = sample_palindrome(alphabet_size, maxdepth=20)
             assert is_palindrome(indices)
