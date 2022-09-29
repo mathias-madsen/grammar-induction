@@ -5,12 +5,6 @@ from collections import defaultdict
 from typing import Sequence, Tuple, Optional, Dict, List
 
 
-# def lognormalize(tns, axis):
-#     """ Exponentiate a tensor and divide by its sum along certain axes. """
-
-#     return torch.exp(tns - torch.logsumexp(tns, axis=axis, keepdims=True))
-
-
 class Grammar(torch.nn.Module):
 
     def __init__(self, nrules: int, nchars: int) -> None:
@@ -76,6 +70,7 @@ class Grammar(torch.nn.Module):
             termidx = np.random.choice(range(dist.size), p=dist)
             return [termidx]
         else:
+            # do another splitting
             dist = trans[rootidx, :, :]
             dist = dist / dist.sum()
             pairidx = np.random.choice(range(dist.size), p=dist.flatten())
