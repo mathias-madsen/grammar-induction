@@ -42,7 +42,7 @@ def is_balanced_parens(sequence: Sequence[int]) -> bool:
 if __name__ == "__main__":
 
     model = Grammar(nchars=2, nrules=10)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
     
     model.zero_grad()
     
@@ -57,9 +57,8 @@ if __name__ == "__main__":
     
             indices = sample_balanced_parens(maxdepth=20)
             assert is_balanced_parens(indices)
-            if len(indices) > 60:
+            if len(indices) > 100:
                 continue
-            # print(len(indices), end=", ", flush=True)
     
             logtrans, logemits = model.get_logtrans_and_logemits()
             loglikes = compile_log_likes(logtrans, logemits, indices)
@@ -82,7 +81,6 @@ if __name__ == "__main__":
         total_chars = 0
     
         if (stepidx + 1) % 10 == 0:
-            print("")
             print("Examples:")
             print("---------")
             samples = [model.sample(maxdepth=20) for _ in range(100)]
