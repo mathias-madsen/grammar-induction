@@ -27,7 +27,7 @@ class Grammar(torch.nn.Module):
 
         # binary probabilities of the binary choice:
         logemitprobs = -torch.nn.functional.softplus(-self.logit_emitprobs)
-        logbranchprobs = -torch.nn.functional.softplus(-self.logit_emitprobs)
+        logbranchprobs = -torch.nn.functional.softplus(+self.logit_emitprobs)
 
         # conditional probabilities, assuming the binary choice:
         logtnorms = torch.logsumexp(self.logtrans, axis=(1, 2), keepdims=True)
@@ -42,18 +42,9 @@ class Grammar(torch.nn.Module):
 
     def get_trans_and_emits(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        # binary probabilities of the binary choice:
-        emitprobs = torch.sigmoid(self.logit_emitprobs)
-
-        # conditional probabilities, assuming the binary choice:
-        logtransflat = self.logtrans.reshape([self.nrules, -1])
-        transflat = torch.softmax(logtransflat, dim=1)
-        cond_trans = transflat.reshape([self.nrules, self.nrules, self.nrules])
-        cond_emits = torch.softmax(self.logemits, dim=1)
-
-        # joint probabilities of the combined choice:
-        trans = cond_trans * (1 - emitprobs[:, None, None])
-        emits = cond_emits * emitprobs[:, None]
+        logtrans, logemits = self.get_logtrans_and_logemits()
+        trans = torch.exp(logtrans)
+        emits = torch.exp(logemits)
 
         transsums = trans.sum(axis=(1, 2))
         emitssums = emits.sum(axis=1)

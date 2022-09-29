@@ -5,7 +5,6 @@ from collections import defaultdict
 from typing import Sequence, Tuple, Optional, Dict, List
 
 from grammar import Grammar
-from parsing import compile_likelihood_table
 from parsing import compile_log_likes
 
 
@@ -58,7 +57,7 @@ if __name__ == "__main__":
     
             indices = sample_balanced_parens(maxdepth=20)
             assert is_balanced_parens(indices)
-            if len(indices) > 40:
+            if len(indices) > 60:
                 continue
             # print(len(indices), end=", ", flush=True)
     
@@ -68,7 +67,7 @@ if __name__ == "__main__":
             loss = -fullspanloglikes[0]  # neg log likelihood under S
             loss.backward()
     
-            total_loss += loss
+            total_loss += float(loss)
             total_sents += 1
             total_chars += len(indices)
     

@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Sequence, Tuple, Optional, Dict, List
 
 from grammar import Grammar
-from parsing import compile_likelihood_table
+from parsing import compile_log_likes
 
 
 def sample_palindrome(alphabet_size: int,
@@ -57,12 +57,12 @@ if __name__ == "__main__":
             # print(len(indices), end=", ", flush=True)
     
             trans, emits = model.get_trans_and_emits()
-            likelihoods = compile_likelihood_table(trans, emits, indices)
-            fullspanlikes = likelihoods[0, len(indices)]
-            loss = -torch.log(fullspanlikes[0])
+            loglikelihoods = compile_log_likes(trans, emits, indices)
+            fullspanloglikes = loglikelihoods[0, len(indices)]
+            loss = -fullspanloglikes[0]  # neg log like under nonterm S
             loss.backward()
     
-            total_loss += loss
+            total_loss += float(loss)
             total_sents += 1
             total_chars += len(indices)
     
