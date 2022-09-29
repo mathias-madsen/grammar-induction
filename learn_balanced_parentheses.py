@@ -16,12 +16,12 @@ def sample_balanced_parens(maxdepth: Optional[int] = None) -> List[int]:
 
     if maxdepth is not None and maxdepth < 1:
         return [0, 1]
-    elif 0 <= uniform < 1/3:
+    elif 0 <= uniform < 0.3:
         return [0, 1]
-    elif 1/3 <= uniform < 2/3:
+    elif 0.3 <= uniform < 0.6:
         return (sample_balanced_parens(newmaxdepth) +
                 sample_balanced_parens(newmaxdepth))
-    elif 2/3 <= uniform < 1:
+    elif 0.6 <= uniform < 1:
         return [0] + sample_balanced_parens(newmaxdepth) + [1]
     else:
         raise Exception("Unexpected toggle value: %r" % uniform)
@@ -42,7 +42,7 @@ def is_balanced_parens(sequence: Sequence[int]) -> bool:
 if __name__ == "__main__":
 
     model = Grammar(nchars=2, nrules=10)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
     
     model.zero_grad()
     
@@ -53,11 +53,11 @@ if __name__ == "__main__":
     for stepidx in range(1000):
     
         print("Step %s . . ." % stepidx)
-        while total_sents < 100:
+        while total_sents < 16:  # virtual batch size
     
             indices = sample_balanced_parens(maxdepth=20)
             assert is_balanced_parens(indices)
-            if len(indices) > 100:
+            if len(indices) > 80:  # max sentence length
                 continue
     
             logtrans, logemits = model.get_logtrans_and_logemits()
@@ -81,14 +81,15 @@ if __name__ == "__main__":
         total_chars = 0
     
         if (stepidx + 1) % 10 == 0:
-            print("Examples:")
-            print("---------")
             samples = [model.sample(maxdepth=20) for _ in range(100)]
-            judgments = [is_balanced_parens(sent) for sent in samples]
-            for sent, isgood in zip(samples[:10], judgments):
-                string = "".join("(" if t == 0 else ")" for t in sent)
-                print(isgood, ":", string)
+            numgood = sum(is_balanced_parens(sent) for sent in samples)
+            print("%s / %s were balanced" % (numgood, len(samples)))
             print("")
-            print("%s / %s were balanced" %
-                  (sum(judgments), len(judgments)))
+            sampleset = set([tuple(s) for s in samples])
+            sortedsample = sorted(sampleset, key=len, reverse=True)
+            tostring = lambda s: "".join("(" if t == 0 else ")" for t in s)
+            good_examples = [s for s in sortedsample if is_balanced_parens(s)]
+            bad_examples = [s for s in sortedsample[::-1] if not is_balanced_parens(s)]
+            print("Good:", ", ".join(tostring(s) for s in good_examples[:10]))
+            print("Bad:", ", ".join(tostring(s) for s in bad_examples[:10]))
             print("")
