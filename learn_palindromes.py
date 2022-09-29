@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     alphabet_size = 2
 
-    model = Grammar(nchars=alphabet_size, nrules=20)
+    model = Grammar(nchars=alphabet_size, nrules=10)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
     
     model.zero_grad()
@@ -48,16 +48,15 @@ if __name__ == "__main__":
     for stepidx in range(1000):
     
         print("Step %s . . ." % stepidx)
-        while total_sents < 80:
+        while total_sents < 300:
     
             indices = sample_palindrome(alphabet_size, maxdepth=20)
             assert is_palindrome(indices)
-            if len(indices) > 40:
+            if len(indices) > 200:
                 continue
-            # print(len(indices), end=", ", flush=True)
     
-            trans, emits = model.get_trans_and_emits()
-            loglikelihoods = compile_log_likes(trans, emits, indices)
+            logtrans, logemits = model.get_logtrans_and_logemits()
+            loglikelihoods = compile_log_likes(logtrans, logemits, indices)
             fullspanloglikes = loglikelihoods[0, len(indices)]
             loss = -fullspanloglikes[0]  # neg log like under nonterm S
             loss.backward()
@@ -94,5 +93,5 @@ if __name__ == "__main__":
             print("")
             print("")
             print("%s / %s (%.1f pct) correctly contrained characters"
-                  % (k, n, 100. * k / n))
+                  % (k, n, 100. * (k + 1e-3) / (n + 2e-3)))
             print("")
