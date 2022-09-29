@@ -6,6 +6,7 @@ from typing import Sequence, Tuple, Optional, Dict, List
 
 from grammar import Grammar
 from parsing import compile_likelihood_table
+from parsing import compile_log_likes
 
 
 def sample_balanced_parens(maxdepth: Optional[int] = None) -> List[int]:
@@ -42,7 +43,7 @@ def is_balanced_parens(sequence: Sequence[int]) -> bool:
 if __name__ == "__main__":
 
     model = Grammar(nchars=2, nrules=10)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
     
     model.zero_grad()
     
@@ -53,18 +54,18 @@ if __name__ == "__main__":
     for stepidx in range(1000):
     
         print("Step %s . . ." % stepidx)
-        while total_sents < 20:
+        while total_sents < 100:
     
             indices = sample_balanced_parens(maxdepth=20)
             assert is_balanced_parens(indices)
             if len(indices) > 40:
                 continue
-            print(len(indices), end=", ", flush=True)
+            # print(len(indices), end=", ", flush=True)
     
-            trans, emits = model.get_trans_and_emits()
-            likelihoods = compile_likelihood_table(trans, emits, indices)
-            fullspanlikes = likelihoods[0, len(indices)]
-            loss = -torch.log(fullspanlikes[0])
+            logtrans, logemits = model.get_logtrans_and_logemits()
+            loglikes = compile_log_likes(logtrans, logemits, indices)
+            fullspanloglikes = loglikes[0, len(indices)]
+            loss = -fullspanloglikes[0]  # neg log likelihood under S
             loss.backward()
     
             total_loss += loss
@@ -82,19 +83,15 @@ if __name__ == "__main__":
         total_chars = 0
     
         if (stepidx + 1) % 10 == 0:
-    
             print("")
             print("Examples:")
             print("---------")
-            judgments = []
-            for _ in range(25):
-                seq = model.sample(maxdepth=20)
-                good = is_balanced_parens(seq)
-                judgments.append(good)
-                string = "".join("(" if t == 0 else ")" for t in seq)
-                print(good, string)
+            samples = [model.sample(maxdepth=20) for _ in range(100)]
+            judgments = [is_balanced_parens(sent) for sent in samples]
+            for sent, isgood in zip(samples[:10], judgments):
+                string = "".join("(" if t == 0 else ")" for t in sent)
+                print(isgood, ":", string)
             print("")
-            k = sum(judgments)
-            n = len(judgments)
-            print("%s / %s (%.1f pct) were balanced" % (k, n, 100. * k / n))
+            print("%s / %s were balanced" %
+                  (sum(judgments), len(judgments)))
             print("")

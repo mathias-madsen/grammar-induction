@@ -23,6 +23,23 @@ class Grammar(torch.nn.Module):
         logit_emitprobs = torch.normal(torch.zeros([nrules]), 1)
         self.logit_emitprobs = torch.nn.Parameter(logit_emitprobs)
 
+    def get_logtrans_and_logemits(self) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        # binary probabilities of the binary choice:
+        logemitprobs = -torch.nn.functional.softplus(-self.logit_emitprobs)
+        logbranchprobs = -torch.nn.functional.softplus(-self.logit_emitprobs)
+
+        # conditional probabilities, assuming the binary choice:
+        logtnorms = torch.logsumexp(self.logtrans, axis=(1, 2), keepdims=True)
+        logtrans = self.logtrans - logtnorms
+        logenorms = torch.logsumexp(self.logemits, axis=1, keepdims=True)
+        logemits = self.logemits - logenorms
+
+        logtrans = logtrans + logbranchprobs[:, None, None]
+        logemits = logemits + logemitprobs[:, None]
+
+        return logtrans, logemits
+
     def get_trans_and_emits(self) -> Tuple[torch.Tensor, torch.Tensor]:
 
         # binary probabilities of the binary choice:
