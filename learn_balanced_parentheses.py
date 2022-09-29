@@ -41,7 +41,7 @@ def is_balanced_parens(sequence: Sequence[int]) -> bool:
 
 if __name__ == "__main__":
 
-    model = Grammar(nchars=2, nrules=10)
+    model = Grammar(nchars=2, nrules=5)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
     
     model.zero_grad()
